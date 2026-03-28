@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: didactic-meme
+    name: hintle
     runtime: node
     plan: free
     buildCommand: npm run build
