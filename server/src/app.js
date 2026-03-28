@@ -8,11 +8,32 @@ const apiRouter = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+const isProd = process.env.NODE_ENV === 'production';
 
 // --------------- Middleware ---------------
-app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
-app.use(morgan('dev'));
+app.use(
+  helmet({
+    contentSecurityPolicy: isProd
+      ? {
+          directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+            fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:'],
+          },
+        }
+      : false,
+  })
+);
+app.use(
+  cors({
+    origin: isProd
+      ? process.env.CLIENT_ORIGIN || true // true = reflect request origin
+      : 'http://localhost:5173',
+  })
+);
+app.use(morgan(isProd ? 'combined' : 'dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -25,10 +46,12 @@ app.get('/health', (_req, res) => {
 });
 
 // --------------- Static files (production) ---------------
-if (process.env.NODE_ENV === 'production') {
+if (isProd) {
   const clientDist = path.join(__dirname, '../../client/dist');
   app.use(express.static(clientDist));
-  app.get('*', (_req, res) => {
+
+  // SPA fallback — only for non-API routes
+  app.get(/^(?!\/api\/)(?!\/health).*/, (_req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
