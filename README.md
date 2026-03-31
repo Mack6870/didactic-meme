@@ -1,4 +1,4 @@
-# Didactic Meme
+# Hintle
 
 Full-stack web application — React + Vite frontend, Express REST API backend.
 
